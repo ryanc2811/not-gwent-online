@@ -23,7 +23,7 @@ $game-height: 800px;
 
 .battleside {
   width: 100%;
-  height: $height/2;
+  height: calc(#{$height} / 2);
   //border: 1px solid black;
 }
 
@@ -227,7 +227,7 @@ $game-height: 800px;
     padding: 5px 0;
     color: #fff;
     text-transform: uppercase;
-    fon-size: 15px;
+    font-size: 15px;
     position: absolute;
     z-index: 21;
     margin-top: -33px;
@@ -242,7 +242,7 @@ $game-height: 800px;
   }
 
 .game-info {
-  height: $game-height/2 - 140px;
+  height: calc((#{$game-height} / 2) - 140px);
   width: 100%;
   //border: 1px solid black;
   //background: rgba(252, 219, 125, 0.1);
@@ -280,7 +280,7 @@ $game-height: 800px;
   &:nth-child(2) {
     border-bottom: 1px solid black;
   }
-  height: $height/2;
+  height:calc(#{$height} / 2);
 }
 
 

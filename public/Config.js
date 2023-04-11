@@ -2,7 +2,7 @@
 var Config = {};
 
 Config.Server = {
-  "hostname": "127.0.0.1",
+  "hostname": "192.168.1.211",
   "port": 16918
 };
 
@@ -14,8 +14,8 @@ Config.Gwent = {
   notification_duration: 4000
 };
 
-(function (name, definition){
-  if (typeof define === 'function'){ // AMD
+(function (name, definition) {
+  if (typeof define === 'function') { // AMD
     define(definition);
   } else if (typeof module !== 'undefined' && module.exports) { // Node.js
     module.exports = definition();

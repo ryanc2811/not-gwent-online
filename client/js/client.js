@@ -10,23 +10,23 @@ let abilityData = require("../../assets/data/abilities");
 window.$ = $;
 
 Handlebars.registerPartial("card", require("../templates/cards.handlebars"));
-Handlebars.registerHelper("health", function(lives){
+Handlebars.registerHelper("health", function (lives) {
   let out = "";
 
-  for(let i = 0; i < 2; i++) {
+  for (let i = 0; i < 2; i++) {
     out += "<i";
-    if(i < lives){
+    if (i < lives) {
       out += " class='ruby'";
     }
     out += "></i>";
   }
   return out;
 });
-Handlebars.registerHelper("formatMessage", function(msg){
+Handlebars.registerHelper("formatMessage", function (msg) {
   let out = "";
   var lines = msg.split(/\n/g);
 
-  lines.forEach(function(line){
+  lines.forEach(function (line) {
     out += line + "<br>";
   })
 
@@ -35,49 +35,54 @@ Handlebars.registerHelper("formatMessage", function(msg){
 
 let App = Backbone.Router.extend({
   routes: {
-    /*"lobby": "lobbyRoute",
+    "lobby": "lobbyRoute",
     "battle": "battleRoute",
-    "*path": "defaultRoute"*/
+    "*path": "defaultRoute"
   },
-  initialize: function(){
+  initialize: function () {
     let self = this;
     this.connect();
-    this.user = new User({app: this});
+    this.user = new User({ app: this });
 
-    /*Backbone.history.start();*/
+    Backbone.history.start();
     this.lobbyRoute();
   },
-  connect: function(){
+  connect: function () {
     this.socket = socket(Config.Server.hostname + ":" + Config.Server.port);
+
     var self = this;
-    console.log(this.socket.connected);
-    this.socket.on("connect", function(socket){
+
+    this.socket.on("connect", function (socket) {
+      if (this.socket) {
+        console.log(this.socket.connected);
+      }
+
       self.user.set("serverOffline", false);
     })
-    this.socket.on("disconnect", function(socket){
+    this.socket.on("disconnect", function (socket) {
       self.user.set("serverOffline", true);
     })
   },
-  receive: function(event, cb){
+  receive: function (event, cb) {
     this.socket.on(event, cb);
   }, /*
   receiveOnce: function(event, cb){
     this.socket.once(event, cb);
   },*/
-  send: function(event, data){
+  send: function (event, data) {
     data = data || null;
     let socket = this.socket;
 
-    if(!data){
+    if (!data) {
       socket.emit(event);
     }
-    if(data){
+    if (data) {
       socket.emit(event, data);
     }
   },
 
-  lobbyRoute: function(){
-    if(this.currentView){
+  lobbyRoute: function () {
+    if (this.currentView) {
       this.currentView.remove();
     }
     this.currentView = new Lobby({
@@ -85,8 +90,8 @@ let App = Backbone.Router.extend({
       user: this.user
     });
   },
-  battleRoute: function(){
-    if(this.currentView){
+  battleRoute: function () {
+    if (this.currentView) {
       this.currentView.remove();
     }
     this.currentView = new BattleView({
@@ -94,14 +99,14 @@ let App = Backbone.Router.extend({
       user: this.user
     });
   },
-  defaultRoute: function(path){
-    this.navigate("lobby", {trigger: true});
+  defaultRoute: function (path) {
+    this.navigate("lobby", { trigger: true });
   },
-  parseEvent: function(event){
+  parseEvent: function (event) {
     let regex = /(\w+):?(\w*)\|?/g;
     let res = {};
     let r;
-    while(r = regex.exec(event)) {
+    while (r = regex.exec(event)) {
       res[r[1]] = r[2];
     }
 
@@ -115,7 +120,7 @@ let SideView = Backbone.View.extend({
   templateCards: require("../templates/fieldCards.handlebars"),
   templateInfo: require("../templates/info.handlebars"),
   templateCardpiles: require("../templates/cardpiles.handlebars"),
-  initialize: function(options){
+  initialize: function (options) {
     let self = this;
     this.side = options.side;
     this.app = options.app;
@@ -126,7 +131,7 @@ let SideView = Backbone.View.extend({
 
 
   },
-  render: function(){
+  render: function () {
     this.renderInfo();
     this.renderCloseField();
     this.renderRangeField();
@@ -135,7 +140,7 @@ let SideView = Backbone.View.extend({
 
     return this;
   },
-  renderInfo: function(){
+  renderInfo: function () {
     let d = this.infoData;
     let l = this.leader;
     let html = this.templateInfo({
@@ -155,15 +160,15 @@ let SideView = Backbone.View.extend({
     }));
 
 
-    if(this.app.user.get("waiting") && this.side === ".player"){
+    if (this.app.user.get("waiting") && this.side === ".player") {
       this.$info.addClass("removeBackground");
     }
-    if(!this.app.user.get("waiting") && this.side === ".foe"){
+    if (!this.app.user.get("waiting") && this.side === ".foe") {
       this.$info.addClass("removeBackground");
     }
   },
-  renderCloseField: function(){
-    if(!this.field.close) return;
+  renderCloseField: function () {
+    if (!this.field.close) return;
     this.$fields = this.$el.find(".battleside" + this.side);
     let $field = this.$fields.find(".field-close").parent();
     let cards = this.field.close.cards;
@@ -175,25 +180,25 @@ let SideView = Backbone.View.extend({
 
     $field.find(".field-close").html(html)
     $field.find(".large-field-counter").html(score)
-    if(horn){
+    if (horn) {
       this.$fields.find(".field-horn-close").html(this.templateCards([horn]));
     }
 
     let isInfluencedByWeather;
-    this.field.weather.cards.forEach((card) =>{
+    this.field.weather.cards.forEach((card) => {
       let key = card._key;
-      if(key === "biting_frost") isInfluencedByWeather = true;
+      if (key === "biting_frost") isInfluencedByWeather = true;
     })
 
-    if(isInfluencedByWeather){
+    if (isInfluencedByWeather) {
       $field.addClass("field-frost");
     }
 
     //calculateCardMargin($field.find(".card"), 351, 70, cards.length);
     this.battleView.calculateMargin($field.find(".field-close"), 5);
   },
-  renderRangeField: function(){
-    if(!this.field.ranged) return;
+  renderRangeField: function () {
+    if (!this.field.ranged) return;
     this.$fields = this.$el.find(".battleside" + this.side);
     let $field = this.$fields.find(".field-range").parent();
     let cards = this.field.ranged.cards;
@@ -204,25 +209,25 @@ let SideView = Backbone.View.extend({
 
     $field.find(".field-range").html(html)
     $field.find(".large-field-counter").html(score)
-    if(horn){
+    if (horn) {
       this.$fields.find(".field-horn-range").html(this.templateCards([horn]));
     }
 
     let isInfluencedByWeather;
-    this.field.weather.cards.forEach((card) =>{
+    this.field.weather.cards.forEach((card) => {
       let key = card._key;
-      if(key === "impenetrable_fog") isInfluencedByWeather = true;
+      if (key === "impenetrable_fog") isInfluencedByWeather = true;
     })
 
-    if(isInfluencedByWeather){
+    if (isInfluencedByWeather) {
       $field.addClass("field-fog");
     }
 
     //calculateCardMargin($field.find(".card"), 351, 70, cards.length);
     this.battleView.calculateMargin($field.find(".field-range"), 5);
   },
-  renderSiegeField: function(){
-    if(!this.field.siege) return;
+  renderSiegeField: function () {
+    if (!this.field.siege) return;
     this.$fields = this.$el.find(".battleside" + this.side);
     let $field = this.$fields.find(".field-siege").parent();
     let cards = this.field.siege.cards;
@@ -233,25 +238,25 @@ let SideView = Backbone.View.extend({
 
     $field.find(".field-siege").html(html)
     $field.find(".large-field-counter").html(score)
-    if(horn){
+    if (horn) {
       this.$fields.find(".field-horn-siege").html(this.templateCards([horn]));
     }
 
     let isInfluencedByWeather;
-    this.field.weather.cards.forEach((card) =>{
+    this.field.weather.cards.forEach((card) => {
       let key = card._key;
-      if(key === "torrential_rain") isInfluencedByWeather = true;
+      if (key === "torrential_rain") isInfluencedByWeather = true;
     })
 
-    if(isInfluencedByWeather){
+    if (isInfluencedByWeather) {
       $field.addClass("field-rain");
     }
 
     //calculateCardMargin($field.find(".card"), 351, 70, cards.length);
     this.battleView.calculateMargin($field.find(".field-siege"), 5);
   },
-  renderWeatherField: function(){
-    if(!this.field.weather) return;
+  renderWeatherField: function () {
+    if (!this.field.weather) return;
     let $weatherField = this.$el.find(".field-weather");
     let cards = this.field.weather.cards;
     $weatherField.html(this.templateCards(cards));
@@ -276,7 +281,7 @@ let SideView = Backbone.View.extend({
 let BattleView = Backbone.View.extend({
   el: ".gwent-battle",
   template: require("../templates/battle.handlebars"),
-  initialize: function(options){
+  initialize: function (options) {
     let self = this;
     let user = this.user = options.user;
     let app = this.app = options.app;
@@ -298,18 +303,18 @@ let BattleView = Backbone.View.extend({
 
     //$(window).on("resize", this.calculateMargin.bind(this, this.$hand));
 
-    let interval = setInterval(function(){
-      if(!user.get("room")) return;
+    let interval = setInterval(function () {
+      if (!user.get("room")) return;
       this.setUpBattleEvents();
-      this.app.send("request:gameLoaded", {_roomID: user.get("room")});
+      this.app.send("request:gameLoaded", { _roomID: user.get("room") });
       clearInterval(interval);
     }.bind(this), 10);
 
     this.render();
 
 
-    this.yourSide = new SideView({side: ".player", app: this.app, battleView: this});
-    this.otherSide = new SideView({side: ".foe", app: this.app, battleView: this});
+    this.yourSide = new SideView({ side: ".player", app: this.app, battleView: this });
+    this.otherSide = new SideView({ side: ".foe", app: this.app, battleView: this });
 
   },
   events: {
@@ -321,39 +326,39 @@ let BattleView = Backbone.View.extend({
     "click .field-discard": "openDiscard",
     "click .field-leader": "clickLeader"
   },
-  onPassing: function(){
-    if(this.user.get("passing")) return;
-    if(this.user.get("waiting")) return;
+  onPassing: function () {
+    if (this.user.get("passing")) return;
+    if (this.user.get("waiting")) return;
     this.user.set("passing", true);
     this.user.get("app").send("set:passing");
   },
-  onClick: function(e){
-    if(!!this.user.get("waiting")) return;
-    if(!!this.user.get("passing")) return;
+  onClick: function (e) {
+    if (!!this.user.get("waiting")) return;
+    if (!!this.user.get("passing")) return;
 
     let self = this;
     let $card = $(e.target).closest(".card");
     let id = $card.data("id");
     let key = $card.data("key");
 
-    if(!!this.user.get("setAgile")){
-      if(id === this.user.get("setAgile")){
+    if (!!this.user.get("setAgile")) {
+      if (id === this.user.get("setAgile")) {
         this.user.set("setAgile", false);
         this.app.send("cancel:agile");
         this.render();
       }
       return;
     }
-    if(!!this.user.get("setHorn")){
-      if(id === this.user.get("setHorn")){
+    if (!!this.user.get("setHorn")) {
+      if (id === this.user.get("setHorn")) {
         this.user.set("setHorn", false);
         this.app.send("cancel:horn");
         this.render();
       }
       return;
     }
-    if(!!this.user.get("waitForDecoy")){
-      if(id === this.user.get("waitForDecoy")){
+    if (!!this.user.get("waitForDecoy")) {
+      if (id === this.user.get("waitForDecoy")) {
         this.user.set("waitForDecoy", false);
         this.app.send("cancel:decoy");
         this.render();
@@ -365,26 +370,26 @@ let BattleView = Backbone.View.extend({
       id: id
     });
 
-    if(key === "decoy"){
+    if (key === "decoy") {
       //console.log("its decoy!!!");
       this.user.set("waitForDecoy", id);
       this.render();
     }
   },
-  onClickFieldCard: function(e){
-    if(this.user.get("waitForDecoy")){
+  onClickFieldCard: function (e) {
+    if (this.user.get("waitForDecoy")) {
       let $card = $(e.target).closest(".card");
-      if(!$card.length) return;
+      if (!$card.length) return;
       let _id = $card.data("id");
 
-      if($card.parent().hasClass("field-horn")) return;
+      if ($card.parent().hasClass("field-horn")) return;
 
       this.app.send("decoy:replaceWith", {
         cardID: _id
       })
       this.user.set("waitForDecoy", false);
     }
-    if(this.user.get("setAgile")){
+    if (this.user.get("setAgile")) {
       let $field = $(e.target).closest(".field.active").find(".field-close, .field-range");
 
       //console.log($field);
@@ -394,7 +399,7 @@ let BattleView = Backbone.View.extend({
       });
       this.user.set("setAgile", false);
     }
-    if(this.user.get("setHorn")){
+    if (this.user.get("setHorn")) {
       let $field = $(e.target).closest(".field.active").find(".field-close, .field-range, .field-siege");
 
       //console.log($field);
@@ -405,21 +410,21 @@ let BattleView = Backbone.View.extend({
       this.user.set("setHorn", false);
     }
   },
-  onMouseover: function(e){
+  onMouseover: function (e) {
     let target = $(e.target).closest(".card");
     var hasPreviewB = target.parent().hasClass("preview-b");
 
-    this.user.set("showPreview", new Preview({key: target.data().key, previewB: hasPreviewB}));
+    this.user.set("showPreview", new Preview({ key: target.data().key, previewB: hasPreviewB }));
   },
-  onMouseleave: function(e){
+  onMouseleave: function (e) {
     this.user.get("showPreview").remove();
     this.user.set("showPreview", null);
   },
-  openDiscard: function(e){
+  openDiscard: function (e) {
     let $discard = $(e.target).closest(".field-discard");
     //console.log("opened discard");
     let side;
-    if($discard.parent().hasClass("player")){
+    if ($discard.parent().hasClass("player")) {
       side = this.yourSide;
     }
     else {
@@ -430,7 +435,7 @@ let BattleView = Backbone.View.extend({
       name: side.infoData.name
     });
   },
-  render: function(){
+  render: function () {
     let self = this;
     this.$el.html(this.template({
       cards: self.handCards,
@@ -441,54 +446,54 @@ let BattleView = Backbone.View.extend({
       },
       isWaiting: self.user.get("waiting")
     }));
-    if(!(this.otherSide && this.yourSide)) return;
+    if (!(this.otherSide && this.yourSide)) return;
     this.otherSide.render();
     this.yourSide.render();
 
 
-    if(this.handCards){
+    if (this.handCards) {
       this.calculateMargin(this.$el.find(".handcard-wrap"));
     }
 
-    if(this.user.get("isReDrawing")){
+    if (this.user.get("isReDrawing")) {
       this.user.set("handCards", this.handCards);
-      let modal = new ReDrawModal({model: this.user});
+      let modal = new ReDrawModal({ model: this.user });
       this.$el.prepend(modal.render().el);
     }
-    if(this.user.get("openDiscard")){
-      let modal = new Modal({model: this.user});
+    if (this.user.get("openDiscard")) {
+      let modal = new Modal({ model: this.user });
       this.$el.prepend(modal.render().el);
     }
-    if(this.user.get("chooseSide")){
-      let modal = new ChooseSideModal({model: this.user});
+    if (this.user.get("chooseSide")) {
+      let modal = new ChooseSideModal({ model: this.user });
       this.$el.prepend(modal.render().el);
     }
-    if(this.user.get("medicDiscard")){
-      let modal = new MedicModal({model: this.user});
+    if (this.user.get("medicDiscard")) {
+      let modal = new MedicModal({ model: this.user });
       this.$el.prepend(modal.render().el);
     }
-    if(this.user.get("emreis_leader4")){
-      let modal = new LeaderEmreis4Modal({model: this.user});
+    if (this.user.get("emreis_leader4")) {
+      let modal = new LeaderEmreis4Modal({ model: this.user });
       this.$el.prepend(modal.render().el);
     }
-    if(this.user.get("setAgile")){
+    if (this.user.get("setAgile")) {
       let id = this.user.get("setAgile");
       this.$el.find("[data-id='" + id + "']").parent().addClass("activeCard");
     }
-    if(this.user.get("setHorn")){
+    if (this.user.get("setHorn")) {
       let id = this.user.get("setHorn");
       this.$el.find("[data-id='" + id + "']").addClass("activeCard");
     }
-    if(this.user.get("waitForDecoy")){
+    if (this.user.get("waitForDecoy")) {
       let id = this.user.get("waitForDecoy");
       this.$el.find("[data-id='" + id + "']").addClass("activeCard");
     }
     return this;
   },
-  renderPreview: function(){
+  renderPreview: function () {
     /*let preview = new Preview({key: this.user.get("showPreview")});*/
     let preview = this.user.get("showPreview");
-    if(!preview){
+    if (!preview) {
       return;
     }
     this.$el.find(".card-preview").html(preview.render().el);
@@ -498,35 +503,35 @@ let BattleView = Backbone.View.extend({
       this.$el.find(".card-preview").css("display", "block");
     }*/
   },
-  clickLeader: function(e){
+  clickLeader: function (e) {
     let $card = $(e.target).closest(".field-leader");
-    if(!$card.parent().hasClass("player")) return;
-    if($card.find(".card").hasClass("disabled")) return;
+    if (!$card.parent().hasClass("player")) return;
+    if ($card.find(".card").hasClass("disabled")) return;
 
     //console.log("click leader");
 
 
     this.app.send("activate:leader")
   },
-  setUpBattleEvents: function(){
+  setUpBattleEvents: function () {
     let self = this;
     let user = this.user;
     let app = user.get("app");
 
-    app.on("update:hand", function(data){
-      if(user.get("roomSide") == data._roomSide){
+    app.on("update:hand", function (data) {
+      if (user.get("roomSide") == data._roomSide) {
         self.handCards = JSON.parse(data.cards);
         self.user.set("handCards", app.handCards);
         self.render();
       }
     })
-    app.on("update:info", function(data){
+    app.on("update:info", function (data) {
       let _side = data._roomSide;
       let infoData = data.info;
       let leader = data.leader;
 
       let side = self.yourSide;
-      if(user.get("roomSide") != _side){
+      if (user.get("roomSide") != _side) {
         side = self.otherSide;
       }
       side.infoData = infoData;
@@ -537,11 +542,11 @@ let BattleView = Backbone.View.extend({
       side.render();
     })
 
-    app.on("update:fields", function(data){
+    app.on("update:fields", function (data) {
       let _side = data._roomSide;
 
       let side = self.yourSide;
-      if(user.get("roomSide") != _side){
+      if (user.get("roomSide") != _side) {
         side = self.otherSide;
       }
       side.field.close = data.close;
@@ -592,26 +597,26 @@ let BattleView = Backbone.View.extend({
       }
     })*/
   },
-  calculateMargin: function($container, minSize){
+  calculateMargin: function ($container, minSize) {
     minSize = typeof minSize === "number" && minSize >= 0 ? minSize : 6;
     var Class = $container.find(".card-wrap").length ? ".card-wrap" : ".card";
-    var n = $container.children().size();
+    var n = $container.children().length;
     let w = $container.width(), c = $container.find(Class).outerWidth(true);
     let res;
-    if(n < minSize)
+    if (n < minSize)
       res = 0;
     else {
       res = -((w - c) / (n - 1) - c) + 1;
     }
 
-    $container.find(Class).not(Class+":first-child").css("margin-left", -res);
+    $container.find(Class).not(Class + ":first-child").css("margin-left", -res);
   }
 });
 
 let Modal = Backbone.Modal.extend({
   template: require("../templates/modal.handlebars"),
   cancelEl: ".bbm-close",
-  cancel: function(){
+  cancel: function () {
     this.model.set("openDiscard", false);
   }
 });
@@ -621,7 +626,7 @@ let MedicModal = Modal.extend({
   events: {
     "click .card": "onCardClick"
   },
-  onCardClick: function(e){
+  onCardClick: function (e) {
     //console.log($(e.target).closest(".card"));
     let id = $(e.target).closest(".card").data().id;
     this.model.get("app").send("medic:chooseCardFromDiscard", {
@@ -629,7 +634,7 @@ let MedicModal = Modal.extend({
     })
     this.model.set("medicDiscard", false);
   },
-  cancel: function(){
+  cancel: function () {
     this.model.get("app").send("medic:chooseCardFromDiscard")
     this.model.set("medicDiscard", false);
   }
@@ -640,14 +645,14 @@ let LeaderEmreis4Modal = Modal.extend({
   events: {
     "click .card": "onCardClick"
   },
-  onCardClick: function(e){
+  onCardClick: function (e) {
     let id = $(e.target).closest(".card").data().id;
     this.model.get("app").send("emreis_leader4:chooseCardFromDiscard", {
       cardID: id
     })
     this.model.set("emreis_leader4", false);
   },
-  cancel: function(){
+  cancel: function () {
     this.model.get("app").send("emreis_leader4:chooseCardFromDiscard")
     this.model.set("emreis_leader4", false);
   }
@@ -655,21 +660,21 @@ let LeaderEmreis4Modal = Modal.extend({
 
 let ReDrawModal = Modal.extend({
   template: require("../templates/modal.redraw.handlebars"),
-  initialize: function(){
+  initialize: function () {
     this.listenTo(this.model, "change:isReDrawing", this.cancel);
   },
   events: {
     "click .card": "onCardClick"
   },
-  onCardClick: function(e){
+  onCardClick: function (e) {
     //console.log($(e.target).closest(".card"));
     let id = $(e.target).closest(".card").data().id;
     this.model.get("app").send("redraw:reDrawCard", {
       cardID: id
     })
   },
-  cancel: function(){
-    if(!this.model.get("isReDrawing")) return;
+  cancel: function () {
+    if (!this.model.get("isReDrawing")) return;
     this.model.get("app").send("redraw:close_client");
     this.model.set("isReDrawing", false);
   }
@@ -684,14 +689,14 @@ let ChooseSideModal = Modal.extend({
   events: {
     "click .btn": "onBtnClick"
   },
-  beforeCancel: function(){
+  beforeCancel: function () {
     return false;
   },
-  onBtnClick: function(e){
+  onBtnClick: function (e) {
     var id = $(e.target).data().id;
 
     this.model.set("chooseSide", false);
-    if(id === "you"){
+    if (id === "you") {
       //this.model.set("chosenSide", this.model.get("roomSide"));
       this.model.chooseSide(this.model.get("roomSide"));
       this.remove();
@@ -709,20 +714,20 @@ let User = Backbone.Model.extend({
     deck: localStorage["userDeck"] || "random",
     serverOffline: true
   },
-  initialize: function(){
+  initialize: function () {
     let self = this;
     let user = this;
     let app = user.get("app");
 
     self.set("chooseSide", false);
 
-    this.listenTo(this.attributes, "change:room", this.subscribeRoom);
+    this.listenTo(this, "change:room", this.subscribeRoom)
 
-    app.receive("response:name", function(data){
+    app.receive("response:name", function (data) {
       self.set("name", data.name);
     });
 
-    app.receive("init:battle", function(data){
+    app.receive("init:battle", function (data) {
       //console.log("opponent found!");
       self.set("roomSide", data.side);
       self.set("roomFoeSide", data.foeSide);
@@ -732,78 +737,78 @@ let User = Backbone.Model.extend({
       app.battleRoute();
     })
 
-    app.receive("response:joinRoom", function(roomID){
+    app.receive("response:joinRoom", function (roomID) {
       self.set("room", roomID);
       //console.log("room id", self.get("room"));
     })
 
-    app.receive("set:waiting", function(data){
+    app.receive("set:waiting", function (data) {
       let waiting = data.waiting;
       self.set("waiting", waiting);
     })
 
-    app.receive("set:passing", function(data){
+    app.receive("set:passing", function (data) {
       let passing = data.passing;
       self.set("passing", passing);
     })
 
-    app.receive("foe:left", function(){
+    app.receive("foe:left", function () {
       //console.log("your foe left the room");
       $(".container").prepend('<div class="notification-left">Your foe left the battle!</div>')
     })
 
-    app.receive("played:medic", function(data){
+    app.receive("played:medic", function (data) {
       let cards = JSON.parse(data.cards);
       self.set("medicDiscard", {
         cards: cards
       });
     })
 
-    app.receive("played:emreis_leader4", function(data){
+    app.receive("played:emreis_leader4", function (data) {
       let cards = JSON.parse(data.cards);
       self.set("emreis_leader4", {
         cards: cards
       });
     })
 
-    app.receive("played:agile", function(data){
+    app.receive("played:agile", function (data) {
       //console.log("played agile");
       self.set("setAgile", data.cardID);
     })
 
-    app.receive("played:horn", function(data){
+    app.receive("played:horn", function (data) {
       //console.log("played horn");
       self.set("setHorn", data.cardID);
     })
 
-    app.receive("redraw:cards", function(){
+    app.receive("redraw:cards", function () {
       self.set("isReDrawing", true);
     })
 
-    app.receive("redraw:close", function(){
+    app.receive("redraw:close", function () {
       self.set("isReDrawing", false);
     })
 
-    app.receive("update:hand", function(data){
+    app.receive("update:hand", function (data) {
       app.trigger("update:hand", data);
     })
-    app.receive("update:fields", function(data){
+    app.receive("update:fields", function (data) {
       app.trigger("update:fields", data);
     })
-    app.receive("update:info", function(data){
+    app.receive("update:info", function (data) {
       app.trigger("update:info", data);
     })
 
-    app.receive("gameover", function(data){
+    app.receive("gameover", function (data) {
       let winner = data.winner;
 
       //console.log("gameover");
 
       let model = Backbone.Model.extend({});
-      let modal = new WinnerModal({model: new model({winner: winner})});
+      let modal = new WinnerModal({ model: new model({ winner: winner }) });
       $("body").prepend(modal.render().el);
     })
-    app.receive("request:chooseWhichSideBegins", function(){
+    app.receive("request:chooseWhichSideBegins", function () {
       self.set("chooseSide", true);
     })
 
@@ -813,47 +818,47 @@ let User = Backbone.Model.extend({
     app.on("setDeck", this.setDeck, this);
 
 
-    app.receive("notification", function(data){
+    app.receive("notification", function (data) {
       new Notification(data).render();
     })
 
-    app.send("request:name", this.get("name") === null ? null : {name: this.get("name")});
-    app.send("set:deck", this.get("deck") === null ? null : {deck: this.get("deck")});
+    app.send("request:name", this.get("name") === null ? null : { name: this.get("name") });
+    app.send("set:deck", this.get("deck") === null ? null : { deck: this.get("deck") });
   },
-  startMatchmaking: function(){
+  startMatchmaking: function () {
     this.set("inMatchmakerQueue", true);
     this.get("app").send("request:matchmaking");
   },
-  joinRoom: function(){
+  joinRoom: function () {
     this.get("app").send("request:joinRoom");
     this.set("inMatchmakerQueue", false);
   },
-  subscribeRoom: function(){
+  subscribeRoom: function () {
     let room = this.get("room");
     let app = this.get("app");
     //app.socket.subscribe(room);
   },
-  setName: function(name){
+  setName: function (name) {
     name = name.slice(0, 20);
-    this.get("app").send("request:name", {name: name});
+    this.get("app").send("request:name", { name: name });
     localStorage["userName"] = name;
   },
-  setDeck: function(deckKey){
+  setDeck: function (deckKey) {
     //console.log("deck: ", deckKey);
     this.set("deckKey", deckKey);
     localStorage["userDeck"] = deckKey;
-    this.get("app").send("set:deck", {deck: deckKey});
+    this.get("app").send("set:deck", { deck: deckKey });
   },
-  chooseSide: function(roomSide){
+  chooseSide: function (roomSide) {
     this.get("app").send("response:chooseWhichSideBegins", {
       side: roomSide
     })
   },
-  getCardData: function(card){
-    if(!card || !card.ability) return;
+  getCardData: function (card) {
+    if (!card || !card.ability) return;
     var abilities;
 
-    if(Array.isArray(card.ability)){
+    if (Array.isArray(card.ability)) {
       abilities = card.ability.slice();
     }
     else {
@@ -861,7 +866,7 @@ let User = Backbone.Model.extend({
       abilities.push(card.ability);
     }
 
-    abilities = abilities.map((ability) =>{
+    abilities = abilities.map((ability) => {
       return abilityData[ability].description;
     })
 
@@ -875,7 +880,7 @@ let Lobby = Backbone.View.extend({
   },
 
   template: require("../templates/lobby.handlebars"),
-  initialize: function(options){
+  initialize: function (options) {
     this.user = options.user;
     this.app = options.app;
 
@@ -893,27 +898,27 @@ let Lobby = Backbone.View.extend({
     "change #deckChoice": "setDeck",
     "click .note": "debugNote"
   },
-  debugNote: function(){
-    new Notification({message: "yoyo TEST\nhallo\n\ntest"}).render();
+  debugNote: function () {
+    new Notification({ message: "yoyo TEST\nhallo\n\ntest" }).render();
   },
-  render: function(){
+  render: function () {
     this.$el.html(this.template(this.user.attributes));
     this.$el.find("#deckChoice").val(this.user.get("deck")).attr("selected", true);
     return this;
   },
-  startMatchmaking: function(){
+  startMatchmaking: function () {
     this.$el.find(".image-gif-loader").show();
     this.app.trigger("startMatchmaking");
   },
-  joinRoom: function(){
+  joinRoom: function () {
     this.app.trigger("joinRoom");
   },
-  setDeck: function(e){
+  setDeck: function (e) {
     let val = $(e.target).val();
     this.app.trigger("setDeck", val);
     this.$el.find("#deckChoice option[value='" + val + "']").attr("selected", "selected")
   },
-  setName: function(){
+  setName: function () {
     /*let val = $(e.target).val();
     this.app.trigger("setDeck", val);
     this.$el.find("#deckChoice option[value='" + val + "']").attr("selected", "selected")*/
@@ -922,27 +927,27 @@ let Lobby = Backbone.View.extend({
     /*this.render();*/
     this.$el.find(".name-input").val(this.app.user.get("name"));
   },
-  changeName: function(e){
+  changeName: function (e) {
     let name = $(e.target).val();
     this.app.trigger("setName", name);
   },
-  renderStatus: function(n){
+  renderStatus: function (n) {
     this.$el.find(".nr-player-online").html(n);
   }
 });
 
 let Preview = Backbone.View.extend({
   template: require("../templates/preview.handlebars"),
-  initialize: function(opt){
+  initialize: function (opt) {
     this.card = cardData[opt.key];
     this.size = opt.size || "lg";
     this.previewB = opt.previewB || false;
 
     this.$el.addClass(this.previewB ? "preview-b" : "");
 
-    if(!this.card || !this.card.ability) return;
+    if (!this.card || !this.card.ability) return;
 
-    if(Array.isArray(this.card.ability)){
+    if (Array.isArray(this.card.ability)) {
       this.abilities = this.card.ability.slice();
     }
     else {
@@ -950,13 +955,13 @@ let Preview = Backbone.View.extend({
       this.abilities.push(this.card.ability);
     }
 
-    this.abilities = this.abilities.map((ability) =>{
+    this.abilities = this.abilities.map((ability) => {
       return abilityData[ability].description;
     })
 
     "lol";
   },
-  render: function(){
+  render: function () {
     let html = this.template({
       card: this.card,
       abilities: this.abilities,
@@ -974,25 +979,25 @@ let Notification = Backbone.View.extend({
   events: {
     "click .alert": "onClick"
   },
-  initialize: function(opt){
+  initialize: function (opt) {
     this.opt = opt;
     $(".notifications").append(this.el);
   },
-  render: function(){
+  render: function () {
     this.$el.html(this.template(this.opt));
     this.show();
     return this;
   },
-  show: function(){
+  show: function () {
     let $alert = this.$el.find(".alert");
     $alert.slideDown(600).delay(Config.Gwent.notification_duration).queue(this.hide.bind(this));
 
   },
-  hide: function(){
+  hide: function () {
     let $alert = this.$el.find(".alert");
     $alert.stop().slideUp().queue(this.remove.bind(this));
   },
-  onClick: function(){
+  onClick: function () {
     this.hide();
   }
 });
